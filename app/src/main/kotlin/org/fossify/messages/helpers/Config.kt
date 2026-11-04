@@ -79,6 +79,22 @@ class Config(context: Context) : BaseConfig(context) {
             pinnedConversations.minus(conversations.map { it.threadId.toString() })
     }
 
+    // Conversation categories are keyed by phone number so they survive app restarts
+    // and remain stable if the telephony thread ID changes.
+    var workConversations: Set<String>
+        get() = prefs.getStringSet(WORK_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(WORK_CONVERSATIONS, value.toSet()).apply()
+
+    var personalConversations: Set<String>
+        get() = prefs.getStringSet(PERSONAL_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(PERSONAL_CONVERSATIONS, value.toSet()).apply()
+
+    fun setConversationWorkCategory(phoneNumber: String, isWork: Boolean) {
+        if (phoneNumber.isBlank()) return
+        workConversations = if (isWork) workConversations + phoneNumber else workConversations - phoneNumber
+        personalConversations = if (isWork) personalConversations - phoneNumber else personalConversations + phoneNumber
+    }
+
     var blockedKeywords: Set<String>
         get() = prefs.getStringSet(BLOCKED_KEYWORDS, HashSet<String>())!!
         set(blockedKeywords) = prefs.edit().putStringSet(BLOCKED_KEYWORDS, blockedKeywords).apply()
@@ -146,6 +162,11 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getString(LAST_BLOCKED_KEYWORD_EXPORT_PATH, "")!!
         set(lastBlockedNumbersExportPath) = prefs.edit()
             .putString(LAST_BLOCKED_KEYWORD_EXPORT_PATH, lastBlockedNumbersExportPath).apply()
+
+    private companion object CategoryKeys {
+        const val WORK_CONVERSATIONS = "work_conversations"
+        const val PERSONAL_CONVERSATIONS = "personal_conversations"
+    }
 
     var keepConversationsArchived: Boolean
         get() = prefs.getBoolean(KEEP_CONVERSATIONS_ARCHIVED, false)
