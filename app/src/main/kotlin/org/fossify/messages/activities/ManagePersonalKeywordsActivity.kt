@@ -52,7 +52,7 @@ class ManagePersonalKeywordsActivity : SimpleActivity() {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val value = input.text.toString().trim()
                 if (value.isEmpty()) {
-                    input.error = getString(org.fossify.commons.R.string.invalid_value)
+                    input.error = "Enter a keyword"
                     return@setOnClickListener
                 }
                 if (original != null && original != value) config.removePersonalKeyword(original)
