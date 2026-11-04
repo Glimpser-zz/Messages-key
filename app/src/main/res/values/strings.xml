@@ -183,9 +183,9 @@
     <string name="faq_4_text">You need to enable \"Send group messages as MMS\" in the app settings. This will ensure that group messages are sent as proper MMS, allowing all participants to see each other\'s replies.</string>
     <string name="all_conversations">All</string>
     <string name="personal_conversations">Personal</string>
-    <string name="work_conversations">Work</string>
+    <string name="contact_conversations">Contacts</string>
     <string name="move_to_personal">Move to personal</string>
-    <string name="move_to_work">Move to work</string>
+
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <!--
