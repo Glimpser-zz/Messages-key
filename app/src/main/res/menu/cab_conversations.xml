@@ -74,12 +74,7 @@
         android:showAsAction="never"
         android:title="@string/move_to_personal"
         app:showAsAction="never" />
-    <item
-        android:id="@+id/cab_move_to_work"
-        android:showAsAction="never"
-        android:title="@string/move_to_work"
-        app:showAsAction="never" />
-    <item
+<item
         android:id="@+id/cab_block_number"
         android:showAsAction="never"
         android:title="@string/block_number"
