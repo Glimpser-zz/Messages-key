@@ -68,8 +68,7 @@ class ConversationsAdapter(
 
         when (id) {
             R.id.cab_add_number_to_contact -> addNumberToContact()
-            R.id.cab_move_to_personal -> setSelectedCategory(false)
-            R.id.cab_move_to_work -> setSelectedCategory(true)
+            R.id.cab_move_to_personal -> setSelectedAsPersonal()
             R.id.cab_block_number -> askConfirmBlock()
             R.id.cab_dial_number -> dialNumber()
             R.id.cab_copy_number -> copyNumberToClipboard()
@@ -270,10 +269,10 @@ class ConversationsAdapter(
         }
     }
 
-    private fun setSelectedCategory(isWork: Boolean) {
+    private fun setSelectedAsPersonal() {
         val selected = getSelectedItems()
         if (selected.isEmpty()) return
-        selected.forEach { activity.config.setConversationWorkCategory(it.phoneNumber, isWork) }
+        selected.forEach { activity.config.addPersonalConversation(it.phoneNumber) }
         finishActMode()
         activity.refreshConversations()
     }
