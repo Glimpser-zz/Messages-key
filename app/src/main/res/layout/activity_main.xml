@@ -29,11 +29,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/conversation_category_tabs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    app:tabMode="fixed"
+                    app:tabGravity="fill" />
+
                 <com.google.android.material.progressindicator.LinearProgressIndicator
                     android:id="@+id/conversations_progress_bar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentTop="true"
+                    android:layout_below="@id/conversation_category_tabs"
                     android:indeterminate="true"
                     android:visibility="gone"
                     app:hideAnimationBehavior="outward"
@@ -72,7 +80,8 @@
                 <com.qtalk.recyclerviewfastscroller.RecyclerViewFastScroller
                     android:id="@+id/conversations_fastscroller"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/conversations_progress_bar">
 
                     <org.fossify.commons.views.MyRecyclerView
                         android:id="@+id/conversations_list"
