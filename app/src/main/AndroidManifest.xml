@@ -147,6 +147,13 @@
             android:parentActivityName=".activities.SettingsActivity" />
 
         <activity
+            android:name=".activities.ManagePersonalKeywordsActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:label="@string/personal_keywords"
+            android:parentActivityName=".activities.SettingsActivity" />
+
+        <activity
             android:name=".activities.VCardViewerActivity"
             android:configChanges="orientation"
             android:exported="false"
