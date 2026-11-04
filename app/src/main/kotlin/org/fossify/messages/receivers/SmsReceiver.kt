@@ -47,16 +47,23 @@ class SmsReceiver : BroadcastReceiver() {
                 val status = parts.last().status
                 val body = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
 
-                if (isMessageFilteredOut(appContext, body)) return@ensureBackgroundThread
-                if (appContext.isNumberBlocked(address)) return@ensureBackgroundThread
-                if (appContext.baseConfig.blockUnknownNumbers) {
-                    val privateCursor =
-                        appContext.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-                    val result = SimpleContactsHelper(appContext).existsSync(address, privateCursor)
-                    if (result == ContactLookupResult.NotFound) return@ensureBackgroundThread
+                // Personal routing has priority over every blocking rule.
+                // A matching keyword moves the entire sender conversation and the SMS is still received.
+                val isPersonalMessage = containsPersonalKeyword(appContext, body)
+                if (isPersonalMessage) {
+                    appContext.config.addPersonalConversation(address)
+                } else {
+                    if (isMessageFilteredOut(appContext, body)) return@ensureBackgroundThread
+                    if (appContext.isNumberBlocked(address)) return@ensureBackgroundThread
+                    if (appContext.baseConfig.blockUnknownNumbers) {
+                        val privateCursor =
+                            appContext.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
+                        val result = SimpleContactsHelper(appContext).existsSync(address, privateCursor)
+                        if (result == ContactLookupResult.NotFound) return@ensureBackgroundThread
+                    }
                 }
 
-                // A personal keyword moves the whole sender conversation; it does not block the SMS.\n                if (containsPersonalKeyword(appContext, body)) {\n                    appContext.config.addPersonalConversation(address)\n                }\n\n                val date = System.currentTimeMillis()
+                val date = System.currentTimeMillis()
                 val threadId = appContext.getThreadId(address)
                 val subscriptionId = intent.getIntExtra("subscription", -1)
 
