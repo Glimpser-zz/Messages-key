@@ -9,6 +9,7 @@ class Config(context: Context) : BaseConfig(context) {
     companion object {
         const val WORK_CONVERSATIONS = "work_conversations"
         const val PERSONAL_CONVERSATIONS = "personal_conversations"
+        const val PERSONAL_KEYWORDS = "personal_keywords"
         fun newInstance(context: Context) = Config(context)
     }
 
@@ -99,6 +100,21 @@ class Config(context: Context) : BaseConfig(context) {
     fun removePersonalConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
         personalConversations = personalConversations - phoneNumber
+    }
+
+    // Keywords that automatically route the sender's entire conversation to Personal.
+    // Kept separate from blockedKeywords so personal routing never acts as spam filtering.
+    var personalKeywords: Set<String>
+        get() = prefs.getStringSet(PERSONAL_KEYWORDS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(PERSONAL_KEYWORDS, value.toSet()).apply()
+
+    fun addPersonalKeyword(keyword: String) {
+        val normalized = keyword.trim()
+        if (normalized.isNotEmpty()) personalKeywords = personalKeywords + normalized
+    }
+
+    fun removePersonalKeyword(keyword: String) {
+        personalKeywords = personalKeywords - keyword
     }
 
     var blockedKeywords: Set<String>
