@@ -274,7 +274,7 @@ class ConversationsAdapter(
         if (selected.isEmpty()) return
         selected.forEach { activity.config.addPersonalConversation(it.phoneNumber) }
         finishActMode()
-        activity.refreshConversations()
+        refreshConversations()
     }
 
     private fun addNumberToContact() {
