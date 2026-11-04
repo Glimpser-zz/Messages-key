@@ -65,6 +65,9 @@
         <item quantity="other">‏%d پیام</item>
     </plurals>
     <string name="manage_blocked_keywords">مدیریت کلیدواژه‌های مسدودشده</string>
+    <string name="personal_keywords">کلیدواژه‌های شخصی</string>
+    <string name="manage_personal_keywords">مدیریت کلیدواژه‌های شخصی</string>
+    <string name="add_personal_keyword">افزودن کلیدواژهٔ شخصی</string>
     <string name="enable_delivery_reports">گزارش تحویل پیام</string>
     <string name="use_simple_characters">حذف نشانه‌های حروف لاتین هنگام ارسال پیام</string>
     <string name="mms_file_size_limit_none">بدون محدودیت</string>
