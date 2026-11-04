@@ -7,6 +7,8 @@ import org.fossify.messages.models.Conversation
 
 class Config(context: Context) : BaseConfig(context) {
     companion object {
+        const val WORK_CONVERSATIONS = "work_conversations"
+        const val PERSONAL_CONVERSATIONS = "personal_conversations"
         fun newInstance(context: Context) = Config(context)
     }
 
@@ -162,11 +164,6 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getString(LAST_BLOCKED_KEYWORD_EXPORT_PATH, "")!!
         set(lastBlockedNumbersExportPath) = prefs.edit()
             .putString(LAST_BLOCKED_KEYWORD_EXPORT_PATH, lastBlockedNumbersExportPath).apply()
-
-    private companion object CategoryKeys {
-        const val WORK_CONVERSATIONS = "work_conversations"
-        const val PERSONAL_CONVERSATIONS = "personal_conversations"
-    }
 
     var keepConversationsArchived: Boolean
         get() = prefs.getBoolean(KEEP_CONVERSATIONS_ARCHIVED, false)
