@@ -91,10 +91,14 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getStringSet(PERSONAL_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
         set(value) = prefs.edit().putStringSet(PERSONAL_CONVERSATIONS, value.toSet()).apply()
 
-    fun setConversationWorkCategory(phoneNumber: String, isWork: Boolean) {
+    fun addPersonalConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
-        workConversations = if (isWork) workConversations + phoneNumber else workConversations - phoneNumber
-        personalConversations = if (isWork) personalConversations - phoneNumber else personalConversations + phoneNumber
+        personalConversations = personalConversations + phoneNumber
+    }
+
+    fun removePersonalConversation(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        personalConversations = personalConversations - phoneNumber
     }
 
     var blockedKeywords: Set<String>
