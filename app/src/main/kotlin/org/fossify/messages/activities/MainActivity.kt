@@ -94,6 +94,7 @@ class MainActivity : SimpleActivity() {
         setContentView(binding.root)
         appLaunched(BuildConfig.APPLICATION_ID)
         setupOptionsMenu()
+        setupConversationCategoryTabs()
         refreshMenuItems()
 
         setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.conversationsList))
@@ -286,7 +287,6 @@ class MainActivity : SimpleActivity() {
         binding.conversationsFab.setOnClickListener {
             launchNewConversation()
         }
-        setupConversationCategoryTabs()
     }
 
     private fun getCachedConversations() {
