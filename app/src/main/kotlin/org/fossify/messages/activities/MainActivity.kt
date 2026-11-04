@@ -439,8 +439,8 @@ class MainActivity : SimpleActivity() {
         binding.conversationCategoryTabs.apply {
             removeAllTabs()
             addTab(newTab().setText(R.string.all_conversations))
+            addTab(newTab().setText(R.string.contact_conversations))
             addTab(newTab().setText(R.string.personal_conversations))
-            addTab(newTab().setText(R.string.work_conversations))
             getTabAt(selectedConversationCategory)?.select()
             addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
                 override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab) {
@@ -454,12 +454,15 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun getConversationsForSelectedCategory(): ArrayList<Conversation> {
-        val work = config.workConversations
         val personal = config.personalConversations
         val filtered = when (selectedConversationCategory) {
-            1 -> allConversations.filter { personal.contains(it.phoneNumber) ||
-                (!work.contains(it.phoneNumber) && !personal.contains(it.phoneNumber)) }
-            2 -> allConversations.filter { work.contains(it.phoneNumber) }
+            1 -> allConversations.filter {
+                !personal.contains(it.phoneNumber) &&
+                    !it.isGroupConversation &&
+                    it.title.isNotBlank() &&
+                    it.title != it.phoneNumber
+            }
+            2 -> allConversations.filter { personal.contains(it.phoneNumber) }
             else -> allConversations
         }
         return ArrayList(filtered)
