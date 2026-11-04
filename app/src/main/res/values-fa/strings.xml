@@ -120,7 +120,7 @@
     <string name="keywords">کلمه‌های کلیدی</string>
     <string name="all_conversations">همه</string>
     <string name="personal_conversations">شخصی</string>
-    <string name="work_conversations">کاری</string>
+    <string name="contact_conversations">مخاطبین</string>
     <string name="move_to_personal">انتقال به شخصی</string>
-    <string name="move_to_work">انتقال به کاری</string>
+
 </resources>
