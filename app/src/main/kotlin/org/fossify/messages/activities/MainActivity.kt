@@ -82,6 +82,8 @@ class MainActivity : SimpleActivity() {
     private var storedTextColor = 0
     private var storedFontSize = 0
     private var lastSearchedText = ""
+    private var allConversations = arrayListOf<Conversation>()
+    private var selectedConversationCategory = 0
     private var bus: EventBus? = null
 
     private val binding by viewBinding(ActivityMainBinding::inflate)
@@ -284,6 +286,7 @@ class MainActivity : SimpleActivity() {
         binding.conversationsFab.setOnClickListener {
             launchNewConversation()
         }
+        setupConversationCategoryTabs()
     }
 
     private fun getCachedConversations() {
@@ -403,12 +406,13 @@ class MainActivity : SimpleActivity() {
         conversations: ArrayList<Conversation>,
         cached: Boolean = false,
     ) {
-        val sortedConversations = conversations
+        allConversations = conversations
             .sortedWith(
                 compareByDescending<Conversation> {
                     config.pinnedConversations.contains(it.threadId.toString())
                 }.thenByDescending { it.date }
             ).toMutableList() as ArrayList<Conversation>
+        val sortedConversations = getConversationsForSelectedCategory()
 
         if (cached && config.appRunCount == 1) {
             // there are no cached conversations on the first run so we show the
@@ -428,6 +432,43 @@ class MainActivity : SimpleActivity() {
                 }
             }
         } catch (_: Exception) {
+        }
+    }
+
+    private fun setupConversationCategoryTabs() {
+        binding.conversationCategoryTabs.apply {
+            removeAllTabs()
+            addTab(newTab().setText(R.string.all_conversations))
+            addTab(newTab().setText(R.string.personal_conversations))
+            addTab(newTab().setText(R.string.work_conversations))
+            getTabAt(selectedConversationCategory)?.select()
+            addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+                override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab) {
+                    selectedConversationCategory = tab.position
+                    showFilteredConversations()
+                }
+                override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab) = Unit
+                override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab) = Unit
+            })
+        }
+    }
+
+    private fun getConversationsForSelectedCategory(): ArrayList<Conversation> {
+        val work = config.workConversations
+        val personal = config.personalConversations
+        val filtered = when (selectedConversationCategory) {
+            1 -> allConversations.filter { personal.contains(it.phoneNumber) ||
+                (!work.contains(it.phoneNumber) && !personal.contains(it.phoneNumber)) }
+            2 -> allConversations.filter { work.contains(it.phoneNumber) }
+            else -> allConversations
+        }
+        return ArrayList(filtered)
+    }
+
+    private fun showFilteredConversations() {
+        val filtered = getConversationsForSelectedCategory()
+        getOrCreateConversationsAdapter().updateConversations(filtered) {
+            showOrHidePlaceholder(filtered.isEmpty())
         }
     }
 
@@ -462,6 +503,10 @@ class MainActivity : SimpleActivity() {
     @SuppressLint("NotifyDataSetChanged")
     private fun notifyDatasetChanged() {
         getOrCreateConversationsAdapter().notifyDataSetChanged()
+    }
+
+    fun refreshConversationCategory() {
+        showFilteredConversations()
     }
 
     private fun handleConversationClick(any: Any) {
