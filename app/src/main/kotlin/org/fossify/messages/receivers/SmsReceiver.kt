@@ -12,6 +12,7 @@ import org.fossify.commons.helpers.SimpleContactsHelper
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.models.PhoneNumber
 import org.fossify.commons.models.SimpleContact
+import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.getConversations
 import org.fossify.messages.extensions.getNameFromAddress
 import org.fossify.messages.extensions.getNotificationBitmap
@@ -22,6 +23,7 @@ import org.fossify.messages.extensions.messagesDB
 import org.fossify.messages.extensions.shouldUnarchive
 import org.fossify.messages.extensions.showReceivedMessageNotification
 import org.fossify.messages.extensions.updateConversationArchivedStatus
+import org.fossify.messages.helpers.ReceiverUtils.containsPersonalKeyword
 import org.fossify.messages.helpers.ReceiverUtils.isMessageFilteredOut
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
@@ -54,7 +56,7 @@ class SmsReceiver : BroadcastReceiver() {
                     if (result == ContactLookupResult.NotFound) return@ensureBackgroundThread
                 }
 
-                val date = System.currentTimeMillis()
+                // A personal keyword moves the whole sender conversation; it does not block the SMS.\n                if (containsPersonalKeyword(appContext, body)) {\n                    appContext.config.addPersonalConversation(address)\n                }\n\n                val date = System.currentTimeMillis()
                 val threadId = appContext.getThreadId(address)
                 val subscriptionId = intent.getIntExtra("subscription", -1)
 
