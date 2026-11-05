@@ -151,4 +151,5 @@
     <string name="company_name">نام شرکت</string>
     <string name="company_assignment_hint">نام شرکت یا بانک را وارد کنید. برای لغو انتساب، گزینهٔ حذف انتساب را بزنید.</string>
     <string name="remove_company_assignment">حذف انتساب</string>
+    <string name="recycle_bin">سطل زباله</string>
 </resources>
