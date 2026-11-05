@@ -34,8 +34,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_alignParentTop="true"
-                    app:tabMode="fixed"
-                    app:tabGravity="fill" />
+                    app:tabMode="scrollable"
+                    app:tabGravity="start" />
 
                 <com.google.android.material.progressindicator.LinearProgressIndicator
                     android:id="@+id/conversations_progress_bar"
