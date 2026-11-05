@@ -31,6 +31,7 @@ import org.fossify.messages.models.Message
 
 class SmsReceiver : BroadcastReceiver() {
 
+    @Suppress("CyclomaticComplexMethod")
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
         val appContext = context.applicationContext
