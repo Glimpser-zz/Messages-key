@@ -17,6 +17,11 @@ import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.helpers.SpamReminderScheduler
 
 class SpamReminderReceiver : BroadcastReceiver() {
+    companion object {
+        private const val NOTIFICATION_REQUEST_CODE = 53171
+        private const val NOTIFICATION_ID = 53172
+        private const val CHANNEL_ID = "spam_reminders"
+    }
     override fun onReceive(context: Context, intent: Intent) {
         val appContext = context.applicationContext
         if (!appContext.config.spamReminderEnabled) return
@@ -27,7 +32,10 @@ class SpamReminderReceiver : BroadcastReceiver() {
                 val spamSenders = appContext.config.spamConversations
                 val personalSenders = appContext.config.personalConversations
                 val unreadCount = appContext.conversationsDB.getNonArchived()
-                    .filter { spamSenders.contains(it.phoneNumber) && !personalSenders.contains(it.phoneNumber) }
+                    .filter {
+                        spamSenders.contains(it.phoneNumber) &&
+                            !personalSenders.contains(it.phoneNumber)
+                    }
                     .sumBy { it.unreadCount }
 
                 if (unreadCount > 0) {
@@ -43,12 +51,11 @@ class SpamReminderReceiver : BroadcastReceiver() {
     }
 
     private fun showReminder(context: Context, unreadCount: Int) {
-        val channelId = "spam_reminders"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = context.getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(
                 NotificationChannel(
-                    channelId,
+                    CHANNEL_ID,
                     context.getString(R.string.spam_reminder_channel),
                     NotificationManager.IMPORTANCE_DEFAULT
                 )
@@ -57,26 +64,33 @@ class SpamReminderReceiver : BroadcastReceiver() {
 
         val openSpamIntent = Intent(context, MainActivity::class.java).apply {
             putExtra(MainActivity.EXTRA_OPEN_SPAM_TAB, true)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val contentIntent = PendingIntent.getActivity(
             context,
-            53171,
+            NOTIFICATION_REQUEST_CODE,
             openSpamIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, channelId)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_messenger)
             .setContentTitle(context.getString(R.string.spam_reminder_title))
-            .setContentText(context.resources.getQuantityString(R.plurals.spam_reminder_message, unreadCount, unreadCount))
+            .setContentText(
+                context.resources.getQuantityString(
+                    R.plurals.spam_reminder_message,
+                    unreadCount,
+                    unreadCount
+                )
+            )
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
         try {
-            NotificationManagerCompat.from(context).notify(53172, notification)
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
         } catch (_: SecurityException) {
             // Notifications may be disabled by the user or OS.
         }
