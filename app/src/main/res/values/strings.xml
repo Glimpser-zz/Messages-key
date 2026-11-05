@@ -221,4 +221,13 @@
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res
     -->
+    <string name="spam_whitelist">Spam whitelist</string>
+    <string name="add_spam_whitelist_number">Add sender to whitelist</string>
+    <string name="remove_spam_whitelist_number">Remove sender from whitelist</string>
+    <string name="spam_whitelist_number_hint">Sender number or sender ID</string>
+    <string name="spam_whitelist_empty">The whitelist is empty</string>
+    <string name="spam_whitelist_number_added">Sender added to whitelist</string>
+    <string name="spam_whitelist_number_removed">Sender removed from whitelist</string>
+    <string name="move_to_spam">Move to Spam</string>
+    <string name="always_allow_sender">Always allow sender</string>
 </resources>
