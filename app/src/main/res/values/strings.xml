@@ -188,6 +188,11 @@
     <string name="spam_conversations">Spam</string>
     <string name="personal_conversations">Personal</string>
     <string name="other_conversations">Other</string>
+    <string name="company_conversations">Companies</string>
+    <string name="assign_to_company">Assign to company</string>
+    <string name="company_name">Company name</string>
+    <string name="company_assignment_hint">Enter a company or bank name. Leave it empty to remove the assignment.</string>
+    <string name="remove_company_assignment">Remove assignment</string>
     <string name="contact_conversations">Contacts</string>
     <string name="move_to_personal">Move to personal</string>
 
