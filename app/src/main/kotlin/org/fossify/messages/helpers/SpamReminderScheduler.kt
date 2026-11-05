@@ -9,6 +9,9 @@ import org.fossify.messages.receivers.SpamReminderReceiver
 
 object SpamReminderScheduler {
     private const val REQUEST_CODE = 53170
+    private const val MINUTES_PER_HOUR = 60L
+    private const val SECONDS_PER_MINUTE = 60L
+    private const val MILLIS_PER_SECOND = 1000L
 
     fun scheduleNext(context: Context) {
         val appContext = context.applicationContext
@@ -19,7 +22,7 @@ object SpamReminderScheduler {
 
         val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent = reminderPendingIntent(appContext)
-        val intervalMillis = appContext.config.spamReminderIntervalHours * 60L * 60L * 1000L
+        val intervalMillis = appContext.config.spamReminderIntervalHours * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLIS_PER_SECOND
         val triggerAt = System.currentTimeMillis() + intervalMillis
         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
     }
