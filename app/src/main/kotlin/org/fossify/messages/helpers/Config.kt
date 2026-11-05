@@ -139,6 +139,8 @@ class Config(context: Context) : BaseConfig(context) {
         companyAssignments = if (name.isEmpty()) {
             companyAssignments - phoneNumber
         } else {
+            personalConversations = personalConversations - phoneNumber
+            removeSpamConversation(phoneNumber)
             companyAssignments + (phoneNumber to name)
         }
     }
