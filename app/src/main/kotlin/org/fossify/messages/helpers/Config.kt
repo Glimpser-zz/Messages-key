@@ -129,6 +129,8 @@ class Config(context: Context) : BaseConfig(context) {
     fun addSpamConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
         spamConversations = spamConversations + phoneNumber
+        personalConversations = personalConversations - phoneNumber
+        spamWhitelist = spamWhitelist - phoneNumber
         companyAssignments = companyAssignments - phoneNumber
     }
 
