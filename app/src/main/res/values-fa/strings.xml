@@ -122,6 +122,7 @@
     <string name="separate_messages">ارسال جداگانه</string>
     <string name="keywords">کلمه‌های کلیدی</string>
     <string name="all_conversations">همه</string>
+    <string name="spam_conversations">اسپم</string>
     <string name="personal_conversations">شخصی</string>
     <string name="other_conversations">سایر</string>
     <string name="contact_conversations">مخاطبین</string>
