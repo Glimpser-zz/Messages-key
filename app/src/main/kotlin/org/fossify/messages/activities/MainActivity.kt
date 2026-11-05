@@ -400,7 +400,7 @@ class MainActivity : SimpleActivity() {
     private fun getCachedConversations() {
         ensureBackgroundThread {
             val conversations = try {
-                conversationsDB.getNonArchived().toMutableList() as ArrayList<Conversation>
+                conversationsDB.getNonArchived() .let { ArrayList(it) }
             } catch (_: Exception) {
                 ArrayList()
             }
@@ -723,7 +723,7 @@ class MainActivity : SimpleActivity() {
     private fun loadTrashConversations() {
         ensureBackgroundThread {
             val items = try {
-                conversationsDB.getAllWithMessagesInRecycleBin().toMutableList() as ArrayList<Conversation>
+                ArrayList(conversationsDB.getAllWithMessagesInRecycleBin())
             } catch (_: Exception) {
                 ArrayList()
             }
