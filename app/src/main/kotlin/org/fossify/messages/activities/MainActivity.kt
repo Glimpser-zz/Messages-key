@@ -440,6 +440,7 @@ class MainActivity : SimpleActivity() {
             removeAllTabs()
             addTab(newTab().setText(R.string.all_conversations))
             addTab(newTab().setText(R.string.spam_conversations))
+            addTab(newTab().setText(R.string.company_conversations))
             addTab(newTab().setText(R.string.contact_conversations))
             addTab(newTab().setText(R.string.personal_conversations))
             addTab(newTab().setText(R.string.other_conversations))
@@ -460,14 +461,17 @@ class MainActivity : SimpleActivity() {
         val spam = config.spamConversations
         val filtered = when (selectedConversationCategory) {
             1 -> allConversations.filter { spam.contains(it.phoneNumber) && !personal.contains(it.phoneNumber) }
-            2 -> allConversations.filter {
+            2 -> allConversations.filter { config.companyAssignments.containsKey(it.phoneNumber) }
+            3 -> allConversations.filter {
                 !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber) &&
+                    !config.companyAssignments.containsKey(it.phoneNumber) &&
                     !it.isGroupConversation && it.title.isNotBlank() && it.title != it.phoneNumber
             }
-            3 -> allConversations.filter { personal.contains(it.phoneNumber) }
-            4 -> allConversations.filter { conversation ->
+            4 -> allConversations.filter { personal.contains(it.phoneNumber) }
+            5 -> allConversations.filter { conversation ->
                 !personal.contains(conversation.phoneNumber) &&
                     !spam.contains(conversation.phoneNumber) &&
+                    !config.companyAssignments.containsKey(conversation.phoneNumber) &&
                     (conversation.isGroupConversation ||
                         conversation.title.isBlank() ||
                         conversation.title == conversation.phoneNumber)
