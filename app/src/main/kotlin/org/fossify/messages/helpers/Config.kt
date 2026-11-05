@@ -12,6 +12,7 @@ class Config(context: Context) : BaseConfig(context) {
         const val PERSONAL_CONVERSATIONS = "personal_conversations"
         const val PERSONAL_KEYWORDS = "personal_keywords"
         const val SPAM_CONVERSATIONS = "spam_conversations"
+        const val SPAM_WHITELIST = "spam_whitelist"
         const val COMPANY_ASSIGNMENTS = "company_assignments"
         const val SPAM_REMINDER_ENABLED = "spam_reminder_enabled"
         const val SPAM_REMINDER_INTERVAL_HOURS = "spam_reminder_interval_hours"
@@ -100,6 +101,22 @@ class Config(context: Context) : BaseConfig(context) {
     var spamConversations: Set<String>
         get() = prefs.getStringSet(SPAM_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
         set(value) = prefs.edit().putStringSet(SPAM_CONVERSATIONS, value.toSet()).apply()
+
+    var spamWhitelist: Set<String>
+        get() = prefs.getStringSet(SPAM_WHITELIST, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(SPAM_WHITELIST, value.toSet()).apply()
+
+    fun addSpamWhitelistNumber(phoneNumber: String) {
+        val number = phoneNumber.trim()
+        if (number.isNotEmpty()) {
+            spamWhitelist = spamWhitelist + number
+            removeSpamConversation(number)
+        }
+    }
+
+    fun removeSpamWhitelistNumber(phoneNumber: String) {
+        spamWhitelist = spamWhitelist - phoneNumber
+    }
 
     var spamReminderEnabled: Boolean
         get() = prefs.getBoolean(SPAM_REMINDER_ENABLED, false)
