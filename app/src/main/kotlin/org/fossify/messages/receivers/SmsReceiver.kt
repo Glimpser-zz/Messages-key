@@ -54,9 +54,13 @@ class SmsReceiver : BroadcastReceiver() {
                 if (isPersonalMessage) {
                     appContext.config.addPersonalConversation(address)
                 } else {
-                    val matchesBlockedKeyword = isMessageFilteredOut(appContext, body)
-                    val matchesBlockedNumber = appContext.isNumberBlocked(address)
-                    val isUnknownSenderBlocked = if (appContext.baseConfig.blockUnknownNumbers) {
+                    val isWhitelisted = appContext.config.spamWhitelist.contains(address)
+                    if (isWhitelisted) {
+                        appContext.config.removeSpamConversation(address)
+                    }
+                    val matchesBlockedKeyword = !isWhitelisted && isMessageFilteredOut(appContext, body)
+                    val matchesBlockedNumber = !isWhitelisted && appContext.isNumberBlocked(address)
+                    val isUnknownSenderBlocked = if (!isWhitelisted && appContext.baseConfig.blockUnknownNumbers) {
                         val privateCursor =
                             appContext.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
                         SimpleContactsHelper(appContext).existsSync(address, privateCursor) ==
@@ -64,8 +68,10 @@ class SmsReceiver : BroadcastReceiver() {
                     } else {
                         false
                     }
-                    isSpamMessage = matchesBlockedKeyword || matchesBlockedNumber ||
-                        isUnknownSenderBlocked || appContext.config.spamConversations.contains(address)
+                    isSpamMessage = !isWhitelisted && (
+                        matchesBlockedKeyword || matchesBlockedNumber ||
+                            isUnknownSenderBlocked || appContext.config.spamConversations.contains(address)
+                        )
                     if (isSpamMessage) {
                         appContext.config.addSpamConversation(address)
                     }
