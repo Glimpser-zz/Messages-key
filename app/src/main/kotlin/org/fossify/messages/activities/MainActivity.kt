@@ -439,6 +439,7 @@ class MainActivity : SimpleActivity() {
         binding.conversationCategoryTabs.apply {
             removeAllTabs()
             addTab(newTab().setText(R.string.all_conversations))
+            addTab(newTab().setText(R.string.spam_conversations))
             addTab(newTab().setText(R.string.contact_conversations))
             addTab(newTab().setText(R.string.personal_conversations))
             addTab(newTab().setText(R.string.other_conversations))
@@ -456,16 +457,17 @@ class MainActivity : SimpleActivity() {
 
     private fun getConversationsForSelectedCategory(): ArrayList<Conversation> {
         val personal = config.personalConversations
+        val spam = config.spamConversations
         val filtered = when (selectedConversationCategory) {
-            1 -> allConversations.filter {
-                !personal.contains(it.phoneNumber) &&
-                    !it.isGroupConversation &&
-                    it.title.isNotBlank() &&
-                    it.title != it.phoneNumber
+            1 -> allConversations.filter { spam.contains(it.phoneNumber) && !personal.contains(it.phoneNumber) }
+            2 -> allConversations.filter {
+                !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber) &&
+                    !it.isGroupConversation && it.title.isNotBlank() && it.title != it.phoneNumber
             }
-            2 -> allConversations.filter { personal.contains(it.phoneNumber) }
-            3 -> allConversations.filter { conversation ->
+            3 -> allConversations.filter { personal.contains(it.phoneNumber) }
+            4 -> allConversations.filter { conversation ->
                 !personal.contains(conversation.phoneNumber) &&
+                    !spam.contains(conversation.phoneNumber) &&
                     (conversation.isGroupConversation ||
                         conversation.title.isBlank() ||
                         conversation.title == conversation.phoneNumber)
