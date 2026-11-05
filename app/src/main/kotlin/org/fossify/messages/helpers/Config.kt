@@ -12,6 +12,7 @@ class Config(context: Context) : BaseConfig(context) {
         const val PERSONAL_CONVERSATIONS = "personal_conversations"
         const val PERSONAL_KEYWORDS = "personal_keywords"
         const val SPAM_CONVERSATIONS = "spam_conversations"
+        const val COMPANY_ASSIGNMENTS = "company_assignments"
         fun newInstance(context: Context) = Config(context)
     }
 
@@ -106,6 +107,40 @@ class Config(context: Context) : BaseConfig(context) {
     fun removeSpamConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
         spamConversations = spamConversations - phoneNumber
+    }
+
+    // Stores one company name per sender number. JSON avoids delimiter collisions.
+    var companyAssignments: Map<String, String>
+        get() {
+            val raw = prefs.getString(COMPANY_ASSIGNMENTS, "{}") ?: "{}"
+            return try {
+                val json = org.json.JSONObject(raw)
+                val result = mutableMapOf<String, String>()
+                json.keys().forEach { key ->
+                    val value = json.optString(key).trim()
+                    if (key.isNotBlank() && value.isNotBlank()) result[key] = value
+                }
+                result
+            } catch (_: Exception) {
+                emptyMap()
+            }
+        }
+        set(value) {
+            val json = org.json.JSONObject()
+            value.forEach { (number, company) ->
+                if (number.isNotBlank() && company.isNotBlank()) json.put(number, company.trim())
+            }
+            prefs.edit().putString(COMPANY_ASSIGNMENTS, json.toString()).apply()
+        }
+
+    fun assignConversationToCompany(phoneNumber: String, companyName: String) {
+        val name = companyName.trim()
+        if (phoneNumber.isBlank()) return
+        companyAssignments = if (name.isEmpty()) {
+            companyAssignments - phoneNumber
+        } else {
+            companyAssignments + (phoneNumber to name)
+        }
     }
 
     fun addPersonalConversation(phoneNumber: String) {
