@@ -112,6 +112,7 @@ class Config(context: Context) : BaseConfig(context) {
     fun addSpamConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
         spamConversations = spamConversations + phoneNumber
+        companyAssignments = companyAssignments - phoneNumber
     }
 
     fun removeSpamConversation(phoneNumber: String) {
@@ -159,6 +160,7 @@ class Config(context: Context) : BaseConfig(context) {
         if (phoneNumber.isBlank()) return
         personalConversations = personalConversations + phoneNumber
         removeSpamConversation(phoneNumber)
+        companyAssignments = companyAssignments - phoneNumber
     }
 
     fun removePersonalConversation(phoneNumber: String) {
