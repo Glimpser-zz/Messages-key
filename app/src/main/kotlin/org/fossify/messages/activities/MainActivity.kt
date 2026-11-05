@@ -461,7 +461,10 @@ class MainActivity : SimpleActivity() {
         val spam = config.spamConversations
         val filtered = when (selectedConversationCategory) {
             1 -> allConversations.filter { spam.contains(it.phoneNumber) && !personal.contains(it.phoneNumber) }
-            2 -> allConversations.filter { config.companyAssignments.containsKey(it.phoneNumber) }
+            2 -> allConversations.filter {
+                config.companyAssignments.containsKey(it.phoneNumber) &&
+                    !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber)
+            }
             3 -> allConversations.filter {
                 !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber) &&
                     !config.companyAssignments.containsKey(it.phoneNumber) &&
