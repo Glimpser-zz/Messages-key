@@ -525,7 +525,11 @@ class MainActivity : SimpleActivity() {
         }
         companyCategoryNames.forEachIndexed { index, company ->
             val unreadCount = allConversations
-                .filter { config.companyAssignments[it.phoneNumber] == company }
+                .filter {
+                    config.companyAssignments[it.phoneNumber] == company &&
+                        !config.spamConversations.contains(it.phoneNumber) &&
+                        !config.personalConversations.contains(it.phoneNumber)
+                }
                 .sumBy { it.unreadCount }
             val label = if (unreadCount > 0) "$company ($unreadCount)" else company
             binding.conversationCategoryTabs.getTabAt(index + 6)?.text = label
