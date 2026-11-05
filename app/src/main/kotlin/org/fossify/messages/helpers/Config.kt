@@ -13,6 +13,8 @@ class Config(context: Context) : BaseConfig(context) {
         const val PERSONAL_KEYWORDS = "personal_keywords"
         const val SPAM_CONVERSATIONS = "spam_conversations"
         const val COMPANY_ASSIGNMENTS = "company_assignments"
+        const val SPAM_REMINDER_ENABLED = "spam_reminder_enabled"
+        const val SPAM_REMINDER_INTERVAL_HOURS = "spam_reminder_interval_hours"
         fun newInstance(context: Context) = Config(context)
     }
 
@@ -98,6 +100,14 @@ class Config(context: Context) : BaseConfig(context) {
     var spamConversations: Set<String>
         get() = prefs.getStringSet(SPAM_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
         set(value) = prefs.edit().putStringSet(SPAM_CONVERSATIONS, value.toSet()).apply()
+
+    var spamReminderEnabled: Boolean
+        get() = prefs.getBoolean(SPAM_REMINDER_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(SPAM_REMINDER_ENABLED, value).apply()
+
+    var spamReminderIntervalHours: Int
+        get() = prefs.getInt(SPAM_REMINDER_INTERVAL_HOURS, 24)
+        set(value) = prefs.edit().putInt(SPAM_REMINDER_INTERVAL_HOURS, value.coerceIn(1, 168)).apply()
 
     fun addSpamConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
