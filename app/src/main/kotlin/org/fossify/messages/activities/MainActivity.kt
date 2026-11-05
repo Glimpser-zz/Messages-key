@@ -76,7 +76,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
-@Suppress("LargeClass")
+@Suppress("LargeClass", "MagicNumber")
 class MainActivity : SimpleActivity() {
     companion object {
         const val EXTRA_OPEN_SPAM_TAB = "open_spam_tab"
@@ -532,6 +532,7 @@ class MainActivity : SimpleActivity() {
         }
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun getConversationsForSelectedCategory(): ArrayList<Conversation> {
         val personal = config.personalConversations
         val spam = config.spamConversations
