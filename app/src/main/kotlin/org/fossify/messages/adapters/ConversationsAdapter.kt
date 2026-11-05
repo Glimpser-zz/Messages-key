@@ -60,6 +60,12 @@ class ConversationsAdapter(
             findItem(R.id.cab_mark_as_unread).isVisible = selectedItems.any { it.read }
             findItem(R.id.cab_archive).isVisible = archiveAvailable
             findItem(R.id.cab_assign_company).isVisible = selectedItems.any { !it.isGroupConversation }
+            findItem(R.id.cab_move_to_spam).isVisible = selectedItems.any {
+                !it.isGroupConversation && !activity.config.spamConversations.contains(it.phoneNumber)
+            }
+            findItem(R.id.cab_allow_sender).isVisible = selectedItems.any {
+                !it.isGroupConversation && activity.config.spamConversations.contains(it.phoneNumber)
+            }
             checkPinBtnVisibility(this)
         }
     }
@@ -74,6 +80,8 @@ class ConversationsAdapter(
             R.id.cab_add_number_to_contact -> addNumberToContact()
             R.id.cab_move_to_personal -> setSelectedAsPersonal()
             R.id.cab_assign_company -> assignSelectedToCompany()
+            R.id.cab_move_to_spam -> moveSelectedToSpam()
+            R.id.cab_allow_sender -> allowSelectedSenders()
             R.id.cab_block_number -> askConfirmBlock()
             R.id.cab_dial_number -> dialNumber()
             R.id.cab_copy_number -> copyNumberToClipboard()
@@ -89,6 +97,22 @@ class ConversationsAdapter(
             R.id.cab_unpin_conversation -> pinConversation(false)
             R.id.cab_select_all -> selectAll()
         }
+    }
+
+    private fun moveSelectedToSpam() {
+        val numbers = getSelectedItems().filterNot { it.isGroupConversation }
+            .map { it.phoneNumber }.distinct()
+        numbers.forEach { activity.config.addSpamConversation(it) }
+        finishActMode()
+        refreshConversations()
+    }
+
+    private fun allowSelectedSenders() {
+        val numbers = getSelectedItems().filterNot { it.isGroupConversation }
+            .map { it.phoneNumber }.distinct()
+        numbers.forEach { activity.config.addSpamWhitelistNumber(it) }
+        finishActMode()
+        refreshConversations()
     }
 
     private fun askConfirmBlock() {
