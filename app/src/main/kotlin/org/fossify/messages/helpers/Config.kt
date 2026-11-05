@@ -11,6 +11,7 @@ class Config(context: Context) : BaseConfig(context) {
         const val WORK_CONVERSATIONS = "work_conversations"
         const val PERSONAL_CONVERSATIONS = "personal_conversations"
         const val PERSONAL_KEYWORDS = "personal_keywords"
+        const val SPAM_CONVERSATIONS = "spam_conversations"
         fun newInstance(context: Context) = Config(context)
     }
 
@@ -93,9 +94,24 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getStringSet(PERSONAL_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
         set(value) = prefs.edit().putStringSet(PERSONAL_CONVERSATIONS, value.toSet()).apply()
 
+    var spamConversations: Set<String>
+        get() = prefs.getStringSet(SPAM_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(SPAM_CONVERSATIONS, value.toSet()).apply()
+
+    fun addSpamConversation(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        spamConversations = spamConversations + phoneNumber
+    }
+
+    fun removeSpamConversation(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        spamConversations = spamConversations - phoneNumber
+    }
+
     fun addPersonalConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
         personalConversations = personalConversations + phoneNumber
+        removeSpamConversation(phoneNumber)
     }
 
     fun removePersonalConversation(phoneNumber: String) {
