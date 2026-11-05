@@ -128,4 +128,9 @@
     <string name="contact_conversations">مخاطبین</string>
     <string name="move_to_personal">انتقال به شخصی</string>
 
+    <string name="company_conversations">شرکت‌ها</string>
+    <string name="assign_to_company">انتساب به شرکت</string>
+    <string name="company_name">نام شرکت</string>
+    <string name="company_assignment_hint">نام شرکت یا بانک را وارد کنید. برای لغو انتساب، گزینهٔ حذف انتساب را بزنید.</string>
+    <string name="remove_company_assignment">حذف انتساب</string>
 </resources>
