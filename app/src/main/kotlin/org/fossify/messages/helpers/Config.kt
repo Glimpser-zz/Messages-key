@@ -123,8 +123,8 @@ class Config(context: Context) : BaseConfig(context) {
         set(value) = prefs.edit().putBoolean(SPAM_REMINDER_ENABLED, value).apply()
 
     var spamReminderIntervalHours: Int
-        get() = prefs.getInt(SPAM_REMINDER_INTERVAL_HOURS, 24)
-        set(value) = prefs.edit().putInt(SPAM_REMINDER_INTERVAL_HOURS, value.coerceIn(1, 168)).apply()
+        get() = prefs.getInt(SPAM_REMINDER_INTERVAL_HOURS, DEFAULT_SPAM_REMINDER_INTERVAL_HOURS)
+        set(value) = prefs.edit().putInt(SPAM_REMINDER_INTERVAL_HOURS, value.coerceIn(MIN_SPAM_REMINDER_INTERVAL_HOURS, MAX_SPAM_REMINDER_INTERVAL_HOURS)).apply()
 
     fun addSpamConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
