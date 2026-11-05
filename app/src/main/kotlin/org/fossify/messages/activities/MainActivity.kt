@@ -1,6 +1,7 @@
 package org.fossify.messages.activities
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.ShortcutInfo
@@ -63,6 +64,7 @@ import org.fossify.messages.extensions.getConversations
 import org.fossify.messages.extensions.getMessages
 import org.fossify.messages.extensions.insertOrUpdateConversation
 import org.fossify.messages.extensions.messagesDB
+import org.fossify.messages.helpers.SpamReminderScheduler
 import org.fossify.messages.helpers.SEARCHED_MESSAGE_ID
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_TITLE
@@ -74,7 +76,11 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
+@Suppress("LargeClass")
 class MainActivity : SimpleActivity() {
+    companion object {
+        const val EXTRA_OPEN_SPAM_TAB = "open_spam_tab"
+    }
     override var isSearchBarEnabled = true
     
     private val MAKE_DEFAULT_APP_REQUEST = 1
@@ -94,6 +100,9 @@ class MainActivity : SimpleActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         appLaunched(BuildConfig.APPLICATION_ID)
+        if (intent.getBooleanExtra(EXTRA_OPEN_SPAM_TAB, false)) {
+            selectedConversationCategory = 1
+        }
         setupOptionsMenu()
         setupConversationCategoryTabs()
         refreshMenuItems()
@@ -183,11 +192,44 @@ class MainActivity : SimpleActivity() {
             when (menuItem.itemId) {
                 R.id.show_recycle_bin -> launchRecycleBin()
                 R.id.show_archived -> launchArchivedConversations()
+                R.id.spam_reminders -> showSpamReminderSettings()
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
                 else -> return@setOnMenuItemClickListener false
             }
             return@setOnMenuItemClickListener true
+        }
+    }
+
+    private fun showSpamReminderSettings() {
+        val intervals = intArrayOf(1, 4, 8, 12, 24)
+        var selectedIndex = intervals.indexOf(config.spamReminderIntervalHours).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.spam_reminder_settings)
+            .setSingleChoiceItems(R.array.spam_reminder_intervals, selectedIndex) { _, which ->
+                selectedIndex = which
+            }
+            .setPositiveButton(R.string.enable_spam_reminders) { _, _ ->
+                config.spamReminderIntervalHours = intervals[selectedIndex]
+                config.spamReminderEnabled = true
+                SpamReminderScheduler.scheduleNext(this)
+                toast(R.string.spam_reminders_enabled)
+            }
+            .setNeutralButton(R.string.disable_spam_reminders) { _, _ ->
+                config.spamReminderEnabled = false
+                SpamReminderScheduler.cancel(this)
+                toast(R.string.spam_reminders_disabled)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_SPAM_TAB, false)) {
+            selectedConversationCategory = 1
+            binding.conversationCategoryTabs.getTabAt(1)?.select()
         }
     }
 
