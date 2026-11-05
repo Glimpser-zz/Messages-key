@@ -92,6 +92,9 @@
     <string name="keyword">Keyword</string>
     <string name="blocked_keywords">Blocked keywords</string>
     <string name="manage_blocked_keywords">Manage blocked keywords</string>
+    <string name="personal_keywords">Personal keywords</string>
+    <string name="manage_personal_keywords">Manage personal keywords</string>
+    <string name="add_personal_keyword">Add personal keyword</string>
     <string name="not_blocking_keywords">You are not blocking any keywords. You may add keywords here to block all messages containing them.</string>
     <string name="add_a_blocked_keyword">Add a blocked keyword</string>
     <string name="lock_screen_visibility">Lock screen notification visibility</string>
@@ -181,10 +184,50 @@
     <string name="faq_3_text">Yes, you can schedule messages to be sent in the future by long pressing the Send button and picking the desired date and time.</string>
     <string name="faq_4_title">Why do my group message replies appear as individual texts to recipients?</string>
     <string name="faq_4_text">You need to enable \"Send group messages as MMS\" in the app settings. This will ensure that group messages are sent as proper MMS, allowing all participants to see each other\'s replies.</string>
+    <string name="recycle_bin">Trash</string>
+    <string name="all_conversations">All</string>
+    <string name="spam_conversations">Spam</string>
+    <string name="spam_reminder_settings">Spam reminders</string>
+    <string name="enable_spam_reminders">Enable reminders</string>
+    <string name="disable_spam_reminders">Disable reminders</string>
+    <string name="spam_reminders_enabled">Spam reminders enabled</string>
+    <string name="spam_reminders_disabled">Spam reminders disabled</string>
+    <string name="spam_reminder_title">Unread spam messages</string>
+    <string name="spam_reminder_channel">Spam reminders</string>
+    <string-array name="spam_reminder_intervals">
+        <item>Every hour</item>
+        <item>Every 4 hours</item>
+        <item>Every 8 hours</item>
+        <item>Every 12 hours</item>
+        <item>Every 24 hours</item>
+    </string-array>
+    <plurals name="spam_reminder_message">
+        <item quantity="one">%d unread spam message. Tap to open Spam.</item>
+        <item quantity="other">%d unread spam messages. Tap to open Spam.</item>
+    </plurals>
+    <string name="personal_conversations">Personal</string>
+    <string name="other_conversations">Other</string>
+    <string name="company_conversations">Companies</string>
+    <string name="assign_to_company">Assign to company</string>
+    <string name="company_name">Company name</string>
+    <string name="company_assignment_hint">Enter a company or bank name. Leave it empty to remove the assignment.</string>
+    <string name="remove_company_assignment">Remove assignment</string>
+    <string name="contact_conversations">Contacts</string>
+    <string name="move_to_personal">Move to personal</string>
+
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <!--
         Haven't found some strings? There's more at
         https://github.com/FossifyOrg/Commons/tree/master/commons/src/main/res
     -->
+    <string name="spam_whitelist">Spam whitelist</string>
+    <string name="add_spam_whitelist_number">Add sender to whitelist</string>
+    <string name="remove_spam_whitelist_number">Remove sender from whitelist</string>
+    <string name="spam_whitelist_number_hint">Sender number or sender ID</string>
+    <string name="spam_whitelist_empty">The whitelist is empty</string>
+    <string name="spam_whitelist_number_added">Sender added to whitelist</string>
+    <string name="spam_whitelist_number_removed">Sender removed from whitelist</string>
+    <string name="move_to_spam">Move to Spam</string>
+    <string name="always_allow_sender">Always allow sender</string>
 </resources>

@@ -103,6 +103,7 @@ class SettingsActivity : SimpleActivity() {
         setupLanguage()
         setupManageBlockedNumbers()
         setupManageBlockedKeywords()
+        setupManagePersonalKeywords()
         setupChangeDateTimeFormat()
         setupFontSize()
         setupShowCharacterCounter()
@@ -214,6 +215,14 @@ class SettingsActivity : SimpleActivity() {
 
         settingsManageBlockedKeywordsHolder.setOnClickListener {
             Intent(this@SettingsActivity, ManageBlockedKeywordsActivity::class.java).apply {
+                startActivity(this)
+            }
+        }
+    }
+
+    private fun setupManagePersonalKeywords() = binding.apply {
+        settingsManagePersonalKeywordsHolder.setOnClickListener {
+            Intent(this@SettingsActivity, ManagePersonalKeywordsActivity::class.java).apply {
                 startActivity(this)
             }
         }

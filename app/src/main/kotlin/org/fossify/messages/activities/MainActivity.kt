@@ -1,6 +1,7 @@
 package org.fossify.messages.activities
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.ShortcutInfo
@@ -10,7 +11,10 @@ import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.provider.Telephony
 import android.text.TextUtils
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import androidx.appcompat.content.res.AppCompatResources
+import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.PermissionRequiredDialog
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.appLaunched
@@ -52,17 +56,20 @@ import org.fossify.commons.models.Release
 import org.fossify.messages.BuildConfig
 import org.fossify.messages.R
 import org.fossify.messages.adapters.ConversationsAdapter
+import org.fossify.messages.adapters.RecycleBinConversationsAdapter
 import org.fossify.messages.adapters.SearchResultsAdapter
 import org.fossify.messages.databinding.ActivityMainBinding
 import org.fossify.messages.extensions.checkAndDeleteOldRecycleBinMessages
 import org.fossify.messages.extensions.clearAllMessagesIfNeeded
 import org.fossify.messages.extensions.clearExpiredScheduledMessages
+import org.fossify.messages.extensions.emptyMessagesRecycleBin
 import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.extensions.getConversations
 import org.fossify.messages.extensions.getMessages
 import org.fossify.messages.extensions.insertOrUpdateConversation
 import org.fossify.messages.extensions.messagesDB
+import org.fossify.messages.helpers.SpamReminderScheduler
 import org.fossify.messages.helpers.SEARCHED_MESSAGE_ID
 import org.fossify.messages.helpers.THREAD_ID
 import org.fossify.messages.helpers.THREAD_TITLE
@@ -74,7 +81,11 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
+@Suppress("LargeClass", "MagicNumber")
 class MainActivity : SimpleActivity() {
+    companion object {
+        const val EXTRA_OPEN_SPAM_TAB = "open_spam_tab"
+    }
     override var isSearchBarEnabled = true
     
     private val MAKE_DEFAULT_APP_REQUEST = 1
@@ -82,7 +93,15 @@ class MainActivity : SimpleActivity() {
     private var storedTextColor = 0
     private var storedFontSize = 0
     private var lastSearchedText = ""
+    private var allConversations = arrayListOf<Conversation>()
+    private var selectedConversationCategory = 0
+    private var companyCategoryNames: List<String> = emptyList()
     private var bus: EventBus? = null
+
+    private val trashTabIndex: Int
+        get() = if (config.useRecycleBin) 6 else -1
+    private val firstCompanyTabIndex: Int
+        get() = if (config.useRecycleBin) 7 else 6
 
     private val binding by viewBinding(ActivityMainBinding::inflate)
 
@@ -91,7 +110,11 @@ class MainActivity : SimpleActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         appLaunched(BuildConfig.APPLICATION_ID)
+        if (intent.getBooleanExtra(EXTRA_OPEN_SPAM_TAB, false)) {
+            selectedConversationCategory = 1
+        }
         setupOptionsMenu()
+        setupConversationCategoryTabs()
         refreshMenuItems()
 
         setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.conversationsList))
@@ -111,15 +134,14 @@ class MainActivity : SimpleActivity() {
         updateMenuColors()
         refreshMenuItems()
 
-        getOrCreateConversationsAdapter().apply {
-            if (storedTextColor != getProperTextColor()) {
-                updateTextColor(getProperTextColor())
-            }
-
-            if (storedFontSize != config.fontSize) {
-                updateFontSize()
-            }
-
+        val activeAdapter = if (selectedConversationCategory == trashTabIndex && trashTabIndex >= 0) {
+            getOrCreateRecycleBinAdapter()
+        } else {
+            getOrCreateConversationsAdapter()
+        }
+        activeAdapter.apply {
+            if (storedTextColor != getProperTextColor()) updateTextColor(getProperTextColor())
+            if (storedFontSize != config.fontSize) updateFontSize()
             updateDrafts()
         }
 
@@ -178,7 +200,10 @@ class MainActivity : SimpleActivity() {
         binding.mainMenu.requireToolbar().setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.show_recycle_bin -> launchRecycleBin()
+                R.id.empty_recycle_bin -> emptyRecycleBin()
                 R.id.show_archived -> launchArchivedConversations()
+                R.id.spam_reminders -> showSpamReminderSettings()
+                R.id.spam_whitelist -> showSpamWhitelistManager()
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
                 else -> return@setOnMenuItemClickListener false
@@ -187,10 +212,96 @@ class MainActivity : SimpleActivity() {
         }
     }
 
+    private fun showSpamReminderSettings() {
+        val intervals = intArrayOf(1, 4, 8, 12, 24)
+        var selectedIndex = intervals.indexOf(config.spamReminderIntervalHours).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.spam_reminder_settings)
+            .setSingleChoiceItems(R.array.spam_reminder_intervals, selectedIndex) { _, which ->
+                selectedIndex = which
+            }
+            .setPositiveButton(R.string.enable_spam_reminders) { _, _ ->
+                config.spamReminderIntervalHours = intervals[selectedIndex]
+                config.spamReminderEnabled = true
+                SpamReminderScheduler.scheduleNext(this)
+                toast(R.string.spam_reminders_enabled)
+            }
+            .setNeutralButton(R.string.disable_spam_reminders) { _, _ ->
+                config.spamReminderEnabled = false
+                SpamReminderScheduler.cancel(this)
+                toast(R.string.spam_reminders_disabled)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showSpamWhitelistManager() {
+        val options = arrayOf(
+            getString(R.string.add_spam_whitelist_number),
+            getString(R.string.remove_spam_whitelist_number)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(R.string.spam_whitelist)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> addSpamWhitelistNumber()
+                    1 -> {
+                        val numbers = config.spamWhitelist.sorted().toTypedArray()
+                        if (numbers.isEmpty()) {
+                            toast(R.string.spam_whitelist_empty)
+                        } else {
+                            AlertDialog.Builder(this)
+                                .setTitle(R.string.remove_spam_whitelist_number)
+                                .setItems(numbers) { _, index ->
+                                    config.removeSpamWhitelistNumber(numbers[index])
+                                    toast(R.string.spam_whitelist_number_removed)
+                                }
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun addSpamWhitelistNumber() {
+        val input = EditText(this).apply {
+            hint = getString(R.string.spam_whitelist_number_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            imeOptions = EditorInfo.IME_ACTION_DONE
+            setSingleLine(true)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.add_spam_whitelist_number)
+            .setView(input)
+            .setPositiveButton(org.fossify.commons.R.string.ok) { _, _ ->
+                val number = input.text.toString().trim()
+                if (number.isNotEmpty()) {
+                    config.addSpamWhitelistNumber(number)
+                    toast(R.string.spam_whitelist_number_added)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_SPAM_TAB, false)) {
+            selectedConversationCategory = 1
+            binding.conversationCategoryTabs.getTabAt(1)?.select()
+        }
+    }
+
     private fun refreshMenuItems() {
         binding.mainMenu.requireToolbar().menu.apply {
             findItem(R.id.show_recycle_bin).isVisible = config.useRecycleBin
             findItem(R.id.show_archived).isVisible = config.isArchiveAvailable
+            findItem(R.id.empty_recycle_bin).isVisible =
+                config.useRecycleBin && selectedConversationCategory == trashTabIndex
         }
     }
 
@@ -289,7 +400,7 @@ class MainActivity : SimpleActivity() {
     private fun getCachedConversations() {
         ensureBackgroundThread {
             val conversations = try {
-                conversationsDB.getNonArchived().toMutableList() as ArrayList<Conversation>
+                conversationsDB.getNonArchived() .let { ArrayList(it) }
             } catch (_: Exception) {
                 ArrayList()
             }
@@ -303,7 +414,7 @@ class MainActivity : SimpleActivity() {
             runOnUiThread {
                 setupConversations(conversations, cached = true)
                 getNewConversations(
-                    (conversations + archived).toMutableList() as ArrayList<Conversation>
+                    (conversations + archived).let { ArrayList(it) }
                 )
             }
             conversations.forEach {
@@ -381,6 +492,9 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun getOrCreateConversationsAdapter(): ConversationsAdapter {
+        if (binding.conversationsList.adapter !is ConversationsAdapter) {
+            binding.conversationsList.adapter = null
+        }
         var currAdapter = binding.conversationsList.adapter
         if (currAdapter == null) {
             hideKeyboard()
@@ -399,16 +513,43 @@ class MainActivity : SimpleActivity() {
         return currAdapter as ConversationsAdapter
     }
 
+    private fun getOrCreateRecycleBinAdapter(): RecycleBinConversationsAdapter {
+        if (binding.conversationsList.adapter !is RecycleBinConversationsAdapter) {
+            binding.conversationsList.adapter = null
+        }
+        var currAdapter = binding.conversationsList.adapter
+        if (currAdapter == null) {
+            hideKeyboard()
+            currAdapter = RecycleBinConversationsAdapter(
+                activity = this,
+                recyclerView = binding.conversationsList,
+                onRefresh = { notifyDatasetChanged() },
+                itemClick = { handleConversationClick(it) }
+            )
+            binding.conversationsList.adapter = currAdapter
+            if (areSystemAnimationsEnabled) binding.conversationsList.scheduleLayoutAnimation()
+        }
+        return currAdapter as RecycleBinConversationsAdapter
+    }
+
     private fun setupConversations(
         conversations: ArrayList<Conversation>,
         cached: Boolean = false,
     ) {
-        val sortedConversations = conversations
+        allConversations = conversations
             .sortedWith(
                 compareByDescending<Conversation> {
                     config.pinnedConversations.contains(it.threadId.toString())
                 }.thenByDescending { it.date }
-            ).toMutableList() as ArrayList<Conversation>
+            ).let { ArrayList(it) }
+        updateCompanyCategoryTabs()
+        if (trashTabIndex >= 0 && selectedConversationCategory == trashTabIndex) {
+            showOrHideProgress(false)
+            loadTrashConversations()
+            return
+        }
+        binding.conversationsFab.beVisible()
+        val sortedConversations = getConversationsForSelectedCategory()
 
         if (cached && config.appRunCount == 1) {
             // there are no cached conversations on the first run so we show the
@@ -428,6 +569,117 @@ class MainActivity : SimpleActivity() {
                 }
             }
         } catch (_: Exception) {
+        }
+    }
+
+    private fun setupConversationCategoryTabs() {
+        companyCategoryNames = config.companyAssignments.values.distinct().sorted()
+        binding.conversationCategoryTabs.apply {
+            removeAllTabs()
+            addTab(newTab().setText(R.string.all_conversations))
+            addTab(newTab().setText(R.string.spam_conversations))
+            addTab(newTab().setText(R.string.company_conversations))
+            addTab(newTab().setText(R.string.contact_conversations))
+            addTab(newTab().setText(R.string.personal_conversations))
+            addTab(newTab().setText(R.string.other_conversations))
+            if (config.useRecycleBin) addTab(newTab().setText(R.string.recycle_bin))
+            companyCategoryNames.forEach { company ->
+                addTab(newTab().setText(company))
+            }
+            getTabAt(selectedConversationCategory)?.select()
+            addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+                override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab) {
+                    selectedConversationCategory = tab.position
+                    showFilteredConversations()
+                }
+                override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab) = Unit
+                override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab) = Unit
+            })
+        }
+    }
+
+    private fun updateCompanyCategoryTabs() {
+        val newNames = config.companyAssignments.values.distinct().sorted()
+        val selectedCompany = companyCategoryNames.getOrNull(selectedConversationCategory - firstCompanyTabIndex)
+        if (newNames != companyCategoryNames) {
+            val tabs = binding.conversationCategoryTabs
+            while (tabs.tabCount > firstCompanyTabIndex) {
+                tabs.removeTabAt(tabs.tabCount - 1)
+            }
+            companyCategoryNames = newNames
+            companyCategoryNames.forEach { company ->
+                tabs.addTab(tabs.newTab().setText(company))
+            }
+            val preservedIndex = selectedCompany?.let { companyCategoryNames.indexOf(it) }
+                ?.takeIf { it >= 0 }?.plus(firstCompanyTabIndex)
+            if (selectedCompany != null) {
+                selectedConversationCategory = preservedIndex ?: 2
+                tabs.getTabAt(selectedConversationCategory)?.select()
+            }
+        }
+        companyCategoryNames.forEachIndexed { index, company ->
+            val unreadCount = allConversations
+                .filter {
+                    config.companyAssignments[it.phoneNumber] == company &&
+                        !config.spamConversations.contains(it.phoneNumber) &&
+                        !config.personalConversations.contains(it.phoneNumber)
+                }
+                .sumBy { it.unreadCount }
+            val label = if (unreadCount > 0) "$company ($unreadCount)" else company
+            binding.conversationCategoryTabs.getTabAt(index + firstCompanyTabIndex)?.text = label
+        }
+    }
+
+    @Suppress("CyclomaticComplexMethod")
+    private fun getConversationsForSelectedCategory(): ArrayList<Conversation> {
+        val personal = config.personalConversations
+        val spam = config.spamConversations
+        val selectedCompany = companyCategoryNames.getOrNull(selectedConversationCategory - firstCompanyTabIndex)
+        val filtered = when (selectedConversationCategory) {
+            1 -> allConversations.filter { spam.contains(it.phoneNumber) && !personal.contains(it.phoneNumber) }
+            2 -> allConversations.filter {
+                config.companyAssignments.containsKey(it.phoneNumber) &&
+                    !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber)
+            }
+            3 -> allConversations.filter {
+                !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber) &&
+                    !config.companyAssignments.containsKey(it.phoneNumber) &&
+                    !it.isGroupConversation && it.title.isNotBlank() && it.title != it.phoneNumber
+            }
+            4 -> allConversations.filter { personal.contains(it.phoneNumber) }
+            5 -> allConversations.filter { conversation ->
+                !personal.contains(conversation.phoneNumber) &&
+                    !spam.contains(conversation.phoneNumber) &&
+                    !config.companyAssignments.containsKey(conversation.phoneNumber) &&
+                    (conversation.isGroupConversation ||
+                        conversation.title.isBlank() ||
+                        conversation.title == conversation.phoneNumber)
+            }
+            else -> if (selectedCompany != null) {
+                allConversations.filter {
+                    config.companyAssignments[it.phoneNumber] == selectedCompany &&
+                        !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber)
+                }
+            } else {
+                allConversations
+            }
+        }
+        return ArrayList(filtered)
+    }
+
+    private fun showFilteredConversations() {
+        if (trashTabIndex >= 0 && selectedConversationCategory == trashTabIndex) {
+            binding.conversationsFab.beGone()
+            binding.noConversationsPlaceholder2.beGone()
+            refreshMenuItems()
+            loadTrashConversations()
+            return
+        }
+        binding.conversationsFab.beVisible()
+        refreshMenuItems()
+        val filtered = getConversationsForSelectedCategory()
+        getOrCreateConversationsAdapter().updateConversations(filtered) {
+            showOrHidePlaceholder(filtered.isEmpty())
         }
     }
 
@@ -461,7 +713,53 @@ class MainActivity : SimpleActivity() {
 
     @SuppressLint("NotifyDataSetChanged")
     private fun notifyDatasetChanged() {
-        getOrCreateConversationsAdapter().notifyDataSetChanged()
+        if (trashTabIndex >= 0 && selectedConversationCategory == trashTabIndex) {
+            getOrCreateRecycleBinAdapter().notifyDataSetChanged()
+        } else {
+            getOrCreateConversationsAdapter().notifyDataSetChanged()
+        }
+    }
+
+    private fun loadTrashConversations() {
+        ensureBackgroundThread {
+            val items = try {
+                ArrayList(conversationsDB.getAllWithMessagesInRecycleBin())
+            } catch (_: Exception) {
+                ArrayList()
+            }
+            runOnUiThread {
+                if (selectedConversationCategory != trashTabIndex) return@runOnUiThread
+                val sorted = items.sortedWith(
+                    compareByDescending<Conversation> { config.pinnedConversations.contains(it.threadId.toString()) }
+                        .thenByDescending { it.date }
+                ).let { ArrayList(it) }
+                binding.conversationsFab.beGone()
+                binding.noConversationsPlaceholder2.beGone()
+                showOrHidePlaceholder(sorted.isEmpty())
+                binding.noConversationsPlaceholder2.beGone()
+                binding.mainMenu.requireToolbar().menu.findItem(R.id.empty_recycle_bin).isVisible = sorted.isNotEmpty()
+                getOrCreateRecycleBinAdapter().updateConversations(sorted)
+            }
+        }
+    }
+
+    private fun emptyRecycleBin() {
+        ConfirmationDialog(
+            activity = this,
+            message = "",
+            messageId = R.string.empty_recycle_bin_messages_confirmation,
+            positive = org.fossify.commons.R.string.yes,
+            negative = org.fossify.commons.R.string.no
+        ) {
+            ensureBackgroundThread {
+                emptyMessagesRecycleBin()
+                loadTrashConversations()
+            }
+        }
+    }
+
+    fun refreshConversationCategory() {
+        showFilteredConversations()
     }
 
     private fun handleConversationClick(any: Any) {
@@ -469,6 +767,9 @@ class MainActivity : SimpleActivity() {
             val conversation = any as Conversation
             putExtra(THREAD_ID, conversation.threadId)
             putExtra(THREAD_TITLE, conversation.title)
+            if (trashTabIndex >= 0 && selectedConversationCategory == trashTabIndex) {
+                putExtra(org.fossify.messages.helpers.IS_RECYCLE_BIN, true)
+            }
             startActivity(this)
         }
     }

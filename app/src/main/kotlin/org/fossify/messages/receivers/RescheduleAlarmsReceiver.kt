@@ -14,6 +14,7 @@ class RescheduleAlarmsReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         ensureBackgroundThread {
             context.rescheduleAllScheduledMessages()
+            org.fossify.messages.helpers.SpamReminderScheduler.scheduleNext(context)
             pendingResult.finish()
         }
     }

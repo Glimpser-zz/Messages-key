@@ -5,8 +5,20 @@ import org.fossify.commons.helpers.BaseConfig
 import org.fossify.messages.extensions.getDefaultKeyboardHeight
 import org.fossify.messages.models.Conversation
 
+@Suppress("TooManyFunctions")
 class Config(context: Context) : BaseConfig(context) {
     companion object {
+        const val WORK_CONVERSATIONS = "work_conversations"
+        const val PERSONAL_CONVERSATIONS = "personal_conversations"
+        const val PERSONAL_KEYWORDS = "personal_keywords"
+        const val SPAM_CONVERSATIONS = "spam_conversations"
+        const val SPAM_WHITELIST = "spam_whitelist"
+        const val COMPANY_ASSIGNMENTS = "company_assignments"
+        const val SPAM_REMINDER_ENABLED = "spam_reminder_enabled"
+        const val SPAM_REMINDER_INTERVAL_HOURS = "spam_reminder_interval_hours"
+        private const val DEFAULT_SPAM_REMINDER_INTERVAL_HOURS = 24
+        private const val MIN_SPAM_REMINDER_INTERVAL_HOURS = 1
+        private const val MAX_SPAM_REMINDER_INTERVAL_HOURS = 168
         fun newInstance(context: Context) = Config(context)
     }
 
@@ -77,6 +89,124 @@ class Config(context: Context) : BaseConfig(context) {
     fun removePinnedConversations(conversations: List<Conversation>) {
         pinnedConversations =
             pinnedConversations.minus(conversations.map { it.threadId.toString() })
+    }
+
+    // Conversation categories are keyed by phone number so they survive app restarts
+    // and remain stable if the telephony thread ID changes.
+    var workConversations: Set<String>
+        get() = prefs.getStringSet(WORK_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(WORK_CONVERSATIONS, value.toSet()).apply()
+
+    var personalConversations: Set<String>
+        get() = prefs.getStringSet(PERSONAL_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(PERSONAL_CONVERSATIONS, value.toSet()).apply()
+
+    var spamConversations: Set<String>
+        get() = prefs.getStringSet(SPAM_CONVERSATIONS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(SPAM_CONVERSATIONS, value.toSet()).apply()
+
+    var spamWhitelist: Set<String>
+        get() = prefs.getStringSet(SPAM_WHITELIST, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(SPAM_WHITELIST, value.toSet()).apply()
+
+    fun addSpamWhitelistNumber(phoneNumber: String) {
+        val number = phoneNumber.trim()
+        if (number.isNotEmpty()) {
+            spamWhitelist = spamWhitelist + number
+            removeSpamConversation(number)
+        }
+    }
+
+    fun removeSpamWhitelistNumber(phoneNumber: String) {
+        spamWhitelist = spamWhitelist - phoneNumber
+    }
+
+    var spamReminderEnabled: Boolean
+        get() = prefs.getBoolean(SPAM_REMINDER_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(SPAM_REMINDER_ENABLED, value).apply()
+
+    var spamReminderIntervalHours: Int
+        get() = prefs.getInt(SPAM_REMINDER_INTERVAL_HOURS, DEFAULT_SPAM_REMINDER_INTERVAL_HOURS)
+        set(value) = prefs.edit()
+            .putInt(
+                SPAM_REMINDER_INTERVAL_HOURS,
+                value.coerceIn(MIN_SPAM_REMINDER_INTERVAL_HOURS, MAX_SPAM_REMINDER_INTERVAL_HOURS)
+            ).apply()
+
+    fun addSpamConversation(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        spamConversations = spamConversations + phoneNumber
+        personalConversations = personalConversations - phoneNumber
+        spamWhitelist = spamWhitelist - phoneNumber
+        companyAssignments = companyAssignments - phoneNumber
+    }
+
+    fun removeSpamConversation(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        spamConversations = spamConversations - phoneNumber
+    }
+
+    // Stores one company name per sender number. JSON avoids delimiter collisions.
+    var companyAssignments: Map<String, String>
+        get() {
+            val raw = prefs.getString(COMPANY_ASSIGNMENTS, "{}") ?: "{}"
+            return try {
+                val json = org.json.JSONObject(raw)
+                val result = mutableMapOf<String, String>()
+                json.keys().forEach { key ->
+                    val value = json.optString(key).trim()
+                    if (key.isNotBlank() && value.isNotBlank()) result[key] = value
+                }
+                result
+            } catch (_: Exception) {
+                emptyMap()
+            }
+        }
+        set(value) {
+            val json = org.json.JSONObject()
+            value.forEach { (number, company) ->
+                if (number.isNotBlank() && company.isNotBlank()) json.put(number, company.trim())
+            }
+            prefs.edit().putString(COMPANY_ASSIGNMENTS, json.toString()).apply()
+        }
+
+    fun assignConversationToCompany(phoneNumber: String, companyName: String) {
+        val name = companyName.trim()
+        if (phoneNumber.isBlank()) return
+        companyAssignments = if (name.isEmpty()) {
+            companyAssignments - phoneNumber
+        } else {
+            personalConversations = personalConversations - phoneNumber
+            removeSpamConversation(phoneNumber)
+            companyAssignments + (phoneNumber to name)
+        }
+    }
+
+    fun addPersonalConversation(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        personalConversations = personalConversations + phoneNumber
+        removeSpamConversation(phoneNumber)
+        companyAssignments = companyAssignments - phoneNumber
+    }
+
+    fun removePersonalConversation(phoneNumber: String) {
+        if (phoneNumber.isBlank()) return
+        personalConversations = personalConversations - phoneNumber
+    }
+
+    // Keywords that automatically route the sender's entire conversation to Personal.
+    // Kept separate from blockedKeywords so personal routing never acts as spam filtering.
+    var personalKeywords: Set<String>
+        get() = prefs.getStringSet(PERSONAL_KEYWORDS, HashSet<String>())?.toSet() ?: emptySet()
+        set(value) = prefs.edit().putStringSet(PERSONAL_KEYWORDS, value.toSet()).apply()
+
+    fun addPersonalKeyword(keyword: String) {
+        val normalized = keyword.trim()
+        if (normalized.isNotEmpty()) personalKeywords = personalKeywords + normalized
+    }
+
+    fun removePersonalKeyword(keyword: String) {
+        personalKeywords = personalKeywords - keyword
     }
 
     var blockedKeywords: Set<String>
