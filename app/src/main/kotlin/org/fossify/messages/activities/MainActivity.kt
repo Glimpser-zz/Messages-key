@@ -84,6 +84,7 @@ class MainActivity : SimpleActivity() {
     private var lastSearchedText = ""
     private var allConversations = arrayListOf<Conversation>()
     private var selectedConversationCategory = 0
+    private var companyCategoryNames: List<String> = emptyList()
     private var bus: EventBus? = null
 
     private val binding by viewBinding(ActivityMainBinding::inflate)
@@ -412,6 +413,7 @@ class MainActivity : SimpleActivity() {
                     config.pinnedConversations.contains(it.threadId.toString())
                 }.thenByDescending { it.date }
             ).toMutableList() as ArrayList<Conversation>
+        updateCompanyCategoryTabs()
         val sortedConversations = getConversationsForSelectedCategory()
 
         if (cached && config.appRunCount == 1) {
@@ -436,6 +438,7 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun setupConversationCategoryTabs() {
+        companyCategoryNames = config.companyAssignments.values.distinct().sorted()
         binding.conversationCategoryTabs.apply {
             removeAllTabs()
             addTab(newTab().setText(R.string.all_conversations))
@@ -444,6 +447,9 @@ class MainActivity : SimpleActivity() {
             addTab(newTab().setText(R.string.contact_conversations))
             addTab(newTab().setText(R.string.personal_conversations))
             addTab(newTab().setText(R.string.other_conversations))
+            companyCategoryNames.forEach { company ->
+                addTab(newTab().setText(company))
+            }
             getTabAt(selectedConversationCategory)?.select()
             addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
                 override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab) {
@@ -456,9 +462,38 @@ class MainActivity : SimpleActivity() {
         }
     }
 
+    private fun updateCompanyCategoryTabs() {
+        val newNames = config.companyAssignments.values.distinct().sorted()
+        val selectedCompany = companyCategoryNames.getOrNull(selectedConversationCategory - 6)
+        if (newNames != companyCategoryNames) {
+            val tabs = binding.conversationCategoryTabs
+            while (tabs.tabCount > 6) {
+                tabs.removeTabAt(tabs.tabCount - 1)
+            }
+            companyCategoryNames = newNames
+            companyCategoryNames.forEach { company ->
+                tabs.addTab(tabs.newTab().setText(company))
+            }
+            val preservedIndex = selectedCompany?.let { companyCategoryNames.indexOf(it) }
+                ?.takeIf { it >= 0 }?.plus(6)
+            if (selectedConversationCategory >= 6) {
+                selectedConversationCategory = preservedIndex ?: 2
+                tabs.getTabAt(selectedConversationCategory)?.select()
+            }
+        }
+        companyCategoryNames.forEachIndexed { index, company ->
+            val unreadCount = allConversations
+                .filter { config.companyAssignments[it.phoneNumber] == company }
+                .sumBy { it.unreadCount }
+            val label = if (unreadCount > 0) "$company ($unreadCount)" else company
+            binding.conversationCategoryTabs.getTabAt(index + 6)?.text = label
+        }
+    }
+
     private fun getConversationsForSelectedCategory(): ArrayList<Conversation> {
         val personal = config.personalConversations
         val spam = config.spamConversations
+        val selectedCompany = companyCategoryNames.getOrNull(selectedConversationCategory - 6)
         val filtered = when (selectedConversationCategory) {
             1 -> allConversations.filter { spam.contains(it.phoneNumber) && !personal.contains(it.phoneNumber) }
             2 -> allConversations.filter {
@@ -479,7 +514,14 @@ class MainActivity : SimpleActivity() {
                         conversation.title.isBlank() ||
                         conversation.title == conversation.phoneNumber)
             }
-            else -> allConversations
+            else -> if (selectedCompany != null) {
+                allConversations.filter {
+                    config.companyAssignments[it.phoneNumber] == selectedCompany &&
+                        !personal.contains(it.phoneNumber) && !spam.contains(it.phoneNumber)
+                }
+            } else {
+                allConversations
+            }
         }
         return ArrayList(filtered)
     }
