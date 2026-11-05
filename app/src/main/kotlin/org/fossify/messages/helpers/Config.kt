@@ -16,6 +16,9 @@ class Config(context: Context) : BaseConfig(context) {
         const val COMPANY_ASSIGNMENTS = "company_assignments"
         const val SPAM_REMINDER_ENABLED = "spam_reminder_enabled"
         const val SPAM_REMINDER_INTERVAL_HOURS = "spam_reminder_interval_hours"
+        private const val DEFAULT_SPAM_REMINDER_INTERVAL_HOURS = 24
+        private const val MIN_SPAM_REMINDER_INTERVAL_HOURS = 1
+        private const val MAX_SPAM_REMINDER_INTERVAL_HOURS = 168
         fun newInstance(context: Context) = Config(context)
     }
 
