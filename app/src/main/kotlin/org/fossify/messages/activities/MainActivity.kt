@@ -476,7 +476,7 @@ class MainActivity : SimpleActivity() {
             }
             val preservedIndex = selectedCompany?.let { companyCategoryNames.indexOf(it) }
                 ?.takeIf { it >= 0 }?.plus(6)
-            if (selectedConversationCategory >= 6) {
+            if (selectedCompany != null) {
                 selectedConversationCategory = preservedIndex ?: 2
                 tabs.getTabAt(selectedConversationCategory)?.select()
             }
