@@ -414,7 +414,7 @@ class MainActivity : SimpleActivity() {
             runOnUiThread {
                 setupConversations(conversations, cached = true)
                 getNewConversations(
-                    (conversations + archived).toMutableList() as ArrayList<Conversation>
+                    (conversations + archived).let { ArrayList(it) }
                 )
             }
             conversations.forEach {
@@ -541,7 +541,7 @@ class MainActivity : SimpleActivity() {
                 compareByDescending<Conversation> {
                     config.pinnedConversations.contains(it.threadId.toString())
                 }.thenByDescending { it.date }
-            ).toMutableList() as ArrayList<Conversation>
+            ).let { ArrayList(it) }
         updateCompanyCategoryTabs()
         if (trashTabIndex >= 0 && selectedConversationCategory == trashTabIndex) {
             showOrHideProgress(false)
@@ -732,7 +732,7 @@ class MainActivity : SimpleActivity() {
                 val sorted = items.sortedWith(
                     compareByDescending<Conversation> { config.pinnedConversations.contains(it.threadId.toString()) }
                         .thenByDescending { it.date }
-                ).toMutableList() as ArrayList<Conversation>
+                ).let { ArrayList(it) }
                 binding.conversationsFab.beGone()
                 binding.noConversationsPlaceholder2.beGone()
                 showOrHidePlaceholder(sorted.isEmpty())
