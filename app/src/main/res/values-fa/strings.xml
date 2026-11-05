@@ -153,4 +153,13 @@
     <string name="remove_company_assignment">حذف انتساب</string>
     <string name="recycle_bin">سطل زباله</string>
     <string name="empty_recycle_bin">خالی کردن سطل زباله</string>
+    <string name="spam_whitelist">فهرست سفید اسپم</string>
+    <string name="add_spam_whitelist_number">افزودن فرستنده به فهرست سفید</string>
+    <string name="remove_spam_whitelist_number">حذف فرستنده از فهرست سفید</string>
+    <string name="spam_whitelist_number_hint">شماره یا شناسهٔ فرستنده</string>
+    <string name="spam_whitelist_empty">فهرست سفید خالی است</string>
+    <string name="spam_whitelist_number_added">فرستنده به فهرست سفید اضافه شد</string>
+    <string name="spam_whitelist_number_removed">فرستنده از فهرست سفید حذف شد</string>
+    <string name="move_to_spam">انتقال به اسپم</string>
+    <string name="always_allow_sender">همیشه اجازهٔ دریافت از این فرستنده</string>
 </resources>
