@@ -22,7 +22,8 @@ object SpamReminderScheduler {
 
         val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent = reminderPendingIntent(appContext)
-        val intervalMillis = appContext.config.spamReminderIntervalHours * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLIS_PER_SECOND
+        val intervalMillis = appContext.config.spamReminderIntervalHours *
+            MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLIS_PER_SECOND
         val triggerAt = System.currentTimeMillis() + intervalMillis
         alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
     }
