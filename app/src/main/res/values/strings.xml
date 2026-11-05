@@ -186,6 +186,24 @@
     <string name="faq_4_text">You need to enable \"Send group messages as MMS\" in the app settings. This will ensure that group messages are sent as proper MMS, allowing all participants to see each other\'s replies.</string>
     <string name="all_conversations">All</string>
     <string name="spam_conversations">Spam</string>
+    <string name="spam_reminder_settings">Spam reminders</string>
+    <string name="enable_spam_reminders">Enable reminders</string>
+    <string name="disable_spam_reminders">Disable reminders</string>
+    <string name="spam_reminders_enabled">Spam reminders enabled</string>
+    <string name="spam_reminders_disabled">Spam reminders disabled</string>
+    <string name="spam_reminder_title">Unread spam messages</string>
+    <string name="spam_reminder_channel">Spam reminders</string>
+    <string-array name="spam_reminder_intervals">
+        <item>Every hour</item>
+        <item>Every 4 hours</item>
+        <item>Every 8 hours</item>
+        <item>Every 12 hours</item>
+        <item>Every 24 hours</item>
+    </string-array>
+    <plurals name="spam_reminder_message">
+        <item quantity="one">%d unread spam message. Tap to open Spam.</item>
+        <item quantity="other">%d unread spam messages. Tap to open Spam.</item>
+    </plurals>
     <string name="personal_conversations">Personal</string>
     <string name="other_conversations">Other</string>
     <string name="company_conversations">Companies</string>
