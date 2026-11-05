@@ -80,6 +80,16 @@
         android:title="@string/move_to_personal"
         app:showAsAction="never" />
 <item
+        android:id="@+id/cab_move_to_spam"
+        android:showAsAction="never"
+        android:title="@string/move_to_spam"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/cab_allow_sender"
+        android:showAsAction="never"
+        android:title="@string/always_allow_sender"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/cab_block_number"
         android:showAsAction="never"
         android:title="@string/block_number"
