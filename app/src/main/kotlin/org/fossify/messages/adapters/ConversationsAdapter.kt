@@ -1,6 +1,9 @@
 package org.fossify.messages.adapters
 
+import android.app.AlertDialog
 import android.content.Intent
+import android.text.InputType
+import android.widget.EditText
 import android.text.TextUtils
 import android.view.Menu
 import org.fossify.commons.dialogs.ConfirmationDialog
@@ -69,6 +72,7 @@ class ConversationsAdapter(
         when (id) {
             R.id.cab_add_number_to_contact -> addNumberToContact()
             R.id.cab_move_to_personal -> setSelectedAsPersonal()
+            R.id.cab_assign_company -> assignSelectedToCompany()
             R.id.cab_block_number -> askConfirmBlock()
             R.id.cab_dial_number -> dialNumber()
             R.id.cab_copy_number -> copyNumberToClipboard()
@@ -267,6 +271,41 @@ class ConversationsAdapter(
 
             refreshConversationsAndFinishActMode()
         }
+    }
+
+    private fun assignSelectedToCompany() {
+        val selected = getSelectedItems().filter { !it.isGroupConversation }
+        if (selected.isEmpty()) return
+        val currentName = selected.firstOrNull()?.let {
+            activity.config.companyAssignments[it.phoneNumber]
+        }.orEmpty()
+        val input = EditText(activity).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS
+            hint = activity.getString(R.string.company_name)
+            setText(currentName)
+            setSelection(text.length)
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.assign_to_company)
+            .setMessage(R.string.company_assignment_hint)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val company = input.text.toString().trim()
+                selected.forEach {
+                    activity.config.assignConversationToCompany(it.phoneNumber, company)
+                }
+                finishActMode()
+                refreshConversations()
+            }
+            .setNeutralButton(R.string.remove_company_assignment) { _, _ ->
+                selected.forEach {
+                    activity.config.assignConversationToCompany(it.phoneNumber, "")
+                }
+                finishActMode()
+                refreshConversations()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun setSelectedAsPersonal() {
