@@ -441,6 +441,7 @@ class MainActivity : SimpleActivity() {
             addTab(newTab().setText(R.string.all_conversations))
             addTab(newTab().setText(R.string.contact_conversations))
             addTab(newTab().setText(R.string.personal_conversations))
+            addTab(newTab().setText(R.string.other_conversations))
             getTabAt(selectedConversationCategory)?.select()
             addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
                 override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab) {
@@ -463,6 +464,12 @@ class MainActivity : SimpleActivity() {
                     it.title != it.phoneNumber
             }
             2 -> allConversations.filter { personal.contains(it.phoneNumber) }
+            3 -> allConversations.filter { conversation ->
+                !personal.contains(conversation.phoneNumber) &&
+                    (conversation.isGroupConversation ||
+                        conversation.title.isBlank() ||
+                        conversation.title == conversation.phoneNumber)
+            }
             else -> allConversations
         }
         return ArrayList(filtered)
