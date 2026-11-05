@@ -59,6 +59,7 @@ class ConversationsAdapter(
             findItem(R.id.cab_mark_as_read).isVisible = selectedItems.any { !it.read }
             findItem(R.id.cab_mark_as_unread).isVisible = selectedItems.any { it.read }
             findItem(R.id.cab_archive).isVisible = archiveAvailable
+            findItem(R.id.cab_assign_company).isVisible = selectedItems.any { !it.isGroupConversation }
             checkPinBtnVisibility(this)
         }
     }
@@ -289,7 +290,7 @@ class ConversationsAdapter(
             .setTitle(R.string.assign_to_company)
             .setMessage(R.string.company_assignment_hint)
             .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
+            .setPositiveButton(android.R.string.ok) { _, _ ->
                 val company = input.text.toString().trim()
                 selected.forEach {
                     activity.config.assignConversationToCompany(it.phoneNumber, company)
