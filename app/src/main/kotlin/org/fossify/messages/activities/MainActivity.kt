@@ -681,6 +681,7 @@ class MainActivity : SimpleActivity() {
                 binding.conversationsFab.beGone()
                 binding.noConversationsPlaceholder2.beGone()
                 showOrHidePlaceholder(sorted.isEmpty())
+                binding.noConversationsPlaceholder2.beGone()
                 binding.mainMenu.requireToolbar().menu.findItem(R.id.empty_recycle_bin).isVisible = sorted.isNotEmpty()
                 getOrCreateRecycleBinAdapter().updateConversations(sorted)
             }
