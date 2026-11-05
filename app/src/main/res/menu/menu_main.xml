@@ -9,6 +9,12 @@
         android:title="@string/show_the_recycle_bin"
         app:showAsAction="never" />
     <item
+        android:id="@+id/empty_recycle_bin"
+        android:icon="@drawable/ic_delete_vector"
+        android:showAsAction="ifRoom"
+        android:title="@string/empty_recycle_bin"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/show_archived"
         android:showAsAction="never"
         android:title="@string/show_archived_conversations"
