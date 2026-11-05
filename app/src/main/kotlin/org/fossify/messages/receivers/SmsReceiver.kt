@@ -47,19 +47,27 @@ class SmsReceiver : BroadcastReceiver() {
                 val status = parts.last().status
                 val body = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
 
-                // Personal routing has priority over every blocking rule.
-                // A matching keyword moves the entire sender conversation and the SMS is still received.
+                // Personal routing has priority over spam rules.
+                // Spam is retained locally but does not trigger a normal notification.
                 val isPersonalMessage = containsPersonalKeyword(appContext, body)
+                var isSpamMessage = false
                 if (isPersonalMessage) {
                     appContext.config.addPersonalConversation(address)
                 } else {
-                    if (isMessageFilteredOut(appContext, body)) return@ensureBackgroundThread
-                    if (appContext.isNumberBlocked(address)) return@ensureBackgroundThread
-                    if (appContext.baseConfig.blockUnknownNumbers) {
+                    val matchesBlockedKeyword = isMessageFilteredOut(appContext, body)
+                    val matchesBlockedNumber = appContext.isNumberBlocked(address)
+                    val isUnknownSenderBlocked = if (appContext.baseConfig.blockUnknownNumbers) {
                         val privateCursor =
                             appContext.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-                        val result = SimpleContactsHelper(appContext).existsSync(address, privateCursor)
-                        if (result == ContactLookupResult.NotFound) return@ensureBackgroundThread
+                        SimpleContactsHelper(appContext).existsSync(address, privateCursor) ==
+                            ContactLookupResult.NotFound
+                    } else {
+                        false
+                    }
+                    isSpamMessage = matchesBlockedKeyword || matchesBlockedNumber ||
+                        isUnknownSenderBlocked || appContext.config.spamConversations.contains(address)
+                    if (isSpamMessage) {
+                        appContext.config.addSpamConversation(address)
                     }
                 }
 
@@ -75,7 +83,8 @@ class SmsReceiver : BroadcastReceiver() {
                     date = date,
                     threadId = threadId,
                     subscriptionId = subscriptionId,
-                    status = status
+                    status = status,
+                    isSpam = isSpamMessage
                 )
             } finally {
                 pending.finish()
@@ -93,7 +102,8 @@ class SmsReceiver : BroadcastReceiver() {
         threadId: Long,
         type: Int = Telephony.Sms.MESSAGE_TYPE_INBOX,
         subscriptionId: Int,
-        status: Int
+        status: Int,
+        isSpam: Boolean = false
     ) {
         val photoUri = SimpleContactsHelper(context).getPhotoUriFromPhoneNumber(address)
         val bitmap = context.getNotificationBitmap(photoUri)
@@ -152,14 +162,16 @@ class SmsReceiver : BroadcastReceiver() {
 
         refreshMessages()
         refreshConversations()
-        context.showReceivedMessageNotification(
-            messageId = newMessageId,
-            isMms = false,
-            address = address,
-            senderName = senderName,
-            body = body,
-            threadId = threadId,
-            bitmap = bitmap
-        )
+        if (!isSpam) {
+            context.showReceivedMessageNotification(
+                messageId = newMessageId,
+                isMms = false,
+                address = address,
+                senderName = senderName,
+                body = body,
+                threadId = threadId,
+                bitmap = bitmap
+            )
+        }
     }
 }
