@@ -127,7 +127,11 @@ class Config(context: Context) : BaseConfig(context) {
 
     var spamReminderIntervalHours: Int
         get() = prefs.getInt(SPAM_REMINDER_INTERVAL_HOURS, DEFAULT_SPAM_REMINDER_INTERVAL_HOURS)
-        set(value) = prefs.edit().putInt(SPAM_REMINDER_INTERVAL_HOURS, value.coerceIn(MIN_SPAM_REMINDER_INTERVAL_HOURS, MAX_SPAM_REMINDER_INTERVAL_HOURS)).apply()
+        set(value) = prefs.edit()
+            .putInt(
+                SPAM_REMINDER_INTERVAL_HOURS,
+                value.coerceIn(MIN_SPAM_REMINDER_INTERVAL_HOURS, MAX_SPAM_REMINDER_INTERVAL_HOURS)
+            ).apply()
 
     fun addSpamConversation(phoneNumber: String) {
         if (phoneNumber.isBlank()) return
