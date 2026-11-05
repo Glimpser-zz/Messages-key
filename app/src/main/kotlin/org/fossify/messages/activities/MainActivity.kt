@@ -11,6 +11,8 @@ import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.provider.Telephony
 import android.text.TextUtils
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import androidx.appcompat.content.res.AppCompatResources
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.dialogs.PermissionRequiredDialog
@@ -201,6 +203,7 @@ class MainActivity : SimpleActivity() {
                 R.id.empty_recycle_bin -> emptyRecycleBin()
                 R.id.show_archived -> launchArchivedConversations()
                 R.id.spam_reminders -> showSpamReminderSettings()
+                R.id.spam_whitelist -> showSpamWhitelistManager()
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
                 else -> return@setOnMenuItemClickListener false
@@ -227,6 +230,58 @@ class MainActivity : SimpleActivity() {
                 config.spamReminderEnabled = false
                 SpamReminderScheduler.cancel(this)
                 toast(R.string.spam_reminders_disabled)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showSpamWhitelistManager() {
+        val options = arrayOf(
+            getString(R.string.add_spam_whitelist_number),
+            getString(R.string.remove_spam_whitelist_number)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(R.string.spam_whitelist)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> addSpamWhitelistNumber()
+                    1 -> {
+                        val numbers = config.spamWhitelist.sorted().toTypedArray()
+                        if (numbers.isEmpty()) {
+                            toast(R.string.spam_whitelist_empty)
+                        } else {
+                            AlertDialog.Builder(this)
+                                .setTitle(R.string.remove_spam_whitelist_number)
+                                .setItems(numbers) { _, index ->
+                                    config.removeSpamWhitelistNumber(numbers[index])
+                                    toast(R.string.spam_whitelist_number_removed)
+                                }
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun addSpamWhitelistNumber() {
+        val input = EditText(this).apply {
+            hint = getString(R.string.spam_whitelist_number_hint)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            imeOptions = EditorInfo.IME_ACTION_DONE
+            setSingleLine(true)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.add_spam_whitelist_number)
+            .setView(input)
+            .setPositiveButton(org.fossify.commons.R.string.ok) { _, _ ->
+                val number = input.text.toString().trim()
+                if (number.isNotEmpty()) {
+                    config.addSpamWhitelistNumber(number)
+                    toast(R.string.spam_whitelist_number_added)
+                }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
